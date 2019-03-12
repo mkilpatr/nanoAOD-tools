@@ -106,12 +106,12 @@ class PostProcessor :
 	    # prepare output file
             if not self.noOut:
                 if self.typeofprocess == "resp" or self.typeofprocess == "tau": outFileName = os.path.join(self.outputDir, os.path.basename(fname).replace(".root",outpostfix+"_flat.root"))
-                elif self.typeofprocess == "smear": outFileName = os.path.join(self.outputDir, os.path.basename(fname).replace(".root",outpostfix+"_smear_1.root"))
+                elif self.typeofprocess == "smear": outFileName = os.path.join(self.outputDir, os.path.basename(fname).replace(".root","_smear_1"+outpostfix+".root"))
                 else: outFileName = os.path.join(self.outputDir, os.path.basename(fname).replace(".root",outpostfix+".root"))
 		outFile = ROOT.TFile.Open(outFileName, "RECREATE", "", compressionLevel)
                 outFileNames.append(outFileName)
 		if self.typeofprocess == "smear":
-			outFileNameSmear = os.path.join(self.outputDir, os.path.basename(fname).replace(".root",outpostfix+"_smear_2.root"))
+			outFileNameSmear = os.path.join(self.outputDir, os.path.basename(fname).replace(".root","_smear_2"+outpostfix+".root"))
 			outFileSmear = ROOT.TFile.Open(outFileNameSmear, "RECREATE", "", compressionLevel)
 			outFileNames.append(outFileNameSmear)
 		else:
@@ -173,8 +173,7 @@ class PostProcessor :
 	print  totEntriesRead/(time.clock()-t0), "Hz"
 
 	if self.haddFileName:
-		if self.typeofprocess == "smear": Name = os.path.join(self.outputDir, os.path.basename(fname).replace(".root",outpostfix+"_smear.root"))
-		os.system("../../../NanoAODTools/scripts/haddnano.py %s %s" %(Name," ".join(outFileNames))) #FIXME: remove "./" once haddnano.py is distributed with cms releases
+		os.system("./haddnano.py %s %s" %(Name," ".join(outFileNames))) #FIXME: remove "./" once haddnano.py is distributed with cms releases
 		os.system("rm %s" %(" ".join(outFileNames)))
 	if self.jobReport :
 		self.jobReport.addOutputFile(self.haddFileName)
