@@ -54,6 +54,7 @@ def eventLoop(modules, inputFile, outputFile, inputTree, wrappedOutputTree, outp
     entries = inputTree.entries
 
     for i in xrange(entries) if eventRange == None else eventRange:
+    #for i in xrange(10) if eventRange == None else eventRange:
         if maxEvents > 0 and i >= maxEvents-1: break
         e = Event(inputTree,i)
         clearExtraBranches(inputTree)
@@ -64,7 +65,7 @@ def eventLoop(modules, inputFile, outputFile, inputTree, wrappedOutputTree, outp
             if not ret: break
         if ret:
             acceptedEvents += 1
-        if (ret or not filterOutput) and wrappedOutputTree != None and typeofprocess != "resp" and typeofprocess != "tau": 
+        if (ret or not filterOutput) and wrappedOutputTree != None and typeofprocess != "resp" and typeofprocess != "tau" and typeofprocess != "smear": 
             wrappedOutputTree.fill()
         if progress:
             if i > 0 and i % progress[0] == 0:

@@ -105,7 +105,7 @@ class PostProcessor :
 
 	    # prepare output file
             if not self.noOut:
-                if self.typeofprocess == "resp" or self.typeofprocess == "tau": outFileName = os.path.join(self.outputDir, os.path.basename(fname).replace(".root",outpostfix+"_flat.root"))
+                if self.typeofprocess == "resp" or self.typeofprocess == "tau": outFileName = os.path.join(self.outputDir, os.path.basename(fname).replace(".root","_flat"+outpostfix+".root"))
                 elif self.typeofprocess == "smear": outFileName = os.path.join(self.outputDir, os.path.basename(fname).replace(".root","_smear_1"+outpostfix+".root"))
                 else: outFileName = os.path.join(self.outputDir, os.path.basename(fname).replace(".root",outpostfix+".root"))
 		outFile = ROOT.TFile.Open(outFileName, "RECREATE", "", compressionLevel)
@@ -158,8 +158,12 @@ class PostProcessor :
 
 	    # now write the output
             if not self.noOut: 
-                outTree.write()
-                outFile.Close()
+		if self.typeofprocess == "smear":
+			outFile.Close()
+			os.remove(outFileName)
+		else:
+			outTree.write()
+			outFile.Close()
                 print "Done %s" % outFileName
 		if self.typeofprocess == "smear":
 			outTreeSmear.write()
