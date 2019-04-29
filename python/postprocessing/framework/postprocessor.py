@@ -12,7 +12,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.jobreport import JobRepo
 
 class PostProcessor :
     def __init__(self,outputDir,inputFiles,cut=None,branchsel=None,modules=[],compression="LZMA:9",friend=False,postfix=None,
-		 jsonInput=None,noOut=False,justcount=False,provenance=False,haddFileName=None,fwkJobReport=False,histFileName=None,histDirName=None, outputbranchsel=None, outputbranchselsmear=None, typeofprocess=None):
+		 jsonInput=None,noOut=False,justcount=False,provenance=False,haddFileName=None,fwkJobReport=False,histFileName=None,histDirName=None, outputbranchsel=None, outputbranchselsmear=None, typeofprocess=None, maxEvents=-1):
 	self.outputDir=outputDir
 	self.inputFiles=inputFiles
 	self.cut=cut
@@ -37,9 +37,10 @@ class PostProcessor :
 	self.typeofprocess=typeofprocess
 	self.histFileName=histFileName
         self.histDirName=histDirName
+        self.maxEvents = maxEvents
     def run(self) :
         outpostfix = self.postfix if self.postfix != None else ("_Friend" if self.friend else "_Skim")
-    	if not self.noOut:
+        if not self.noOut:
             
             if self.compression != "none":
                 ROOT.gInterpreter.ProcessLine("#include <Compression.h>")
@@ -50,16 +51,16 @@ class PostProcessor :
                 else: raise RuntimeError("Unsupported compression %s" % algo)
             else:
                 compressionLevel = 0 
-	    print "Will write selected trees to "+self.outputDir
+            print "Will write selected trees to "+self.outputDir
             if not self.justcount:
                 if not os.path.exists(self.outputDir):
                     os.system("mkdir -p "+self.outputDir)
         else:
             compressionLevel = 0
 
-	if self.noOut:
-	    if len(self.modules) == 0: 
-		raise RuntimeError("Running with --noout and no modules does nothing!")
+        if self.noOut:
+            if len(self.modules) == 0: 
+                raise RuntimeError("Running with --noout and no modules does nothing!")
 
         # Open histogram file, if desired 
         if (self.histFileName != None and self.histDirName == None) or (self.histFileName == None and self.histDirName != None) :
@@ -76,34 +77,34 @@ class PostProcessor :
             else :
                 m.beginJob()
 
-	fullClone = (len(self.modules) == 0)
-	outFileNames=[]
+        fullClone = (len(self.modules) == 0)
+        outFileNames=[]
         t0 = time.clock()
-	totEntriesRead=0
-	for fname in self.inputFiles:
+        totEntriesRead=0
+        for fname in self.inputFiles:
 
-	    # open input file
-	    inFile = ROOT.TFile.Open(fname)
+            # open input file
+            inFile = ROOT.TFile.Open(fname)
 
-	    #get input tree
-	    inTree = inFile.Get("Events")
-	    totEntriesRead+=inTree.GetEntries()
-	    # pre-skimming
-	    elist,jsonFilter = preSkim(inTree, self.json, self.cut)
-	    if self.justcount:
-		print 'Would select %d entries from %s'%(elist.GetN() if elist else inTree.GetEntries(), fname)
-		continue
-	    else:
-		print 'Pre-select %d entries out of %s '%(elist.GetN() if elist else inTree.GetEntries(),inTree.GetEntries())
-		
-	    if fullClone:
-		# no need of a reader (no event loop), but set up the elist if available
-		if elist: inTree.SetEntryList(elist)
-	    else:
-		# initialize reader
-		inTree = InputTree(inTree, elist) 
+            #get input tree
+            inTree = inFile.Get("Events")
+            totEntriesRead+=inTree.GetEntries()
+            # pre-skimming
+            elist,jsonFilter = preSkim(inTree, self.json, self.cut)
+            if self.justcount:
+                print 'Would select %d entries from %s'%(elist.GetN() if elist else inTree.GetEntries(), fname)
+                continue
+            else:
+                print 'Pre-select %d entries out of %s '%(elist.GetN() if elist else inTree.GetEntries(),inTree.GetEntries())
+                
+            if fullClone:
+                # no need of a reader (no event loop), but set up the elist if available
+                if elist: inTree.SetEntryList(elist)
+            else:
+                # initialize reader
+                inTree = InputTree(inTree, elist) 
 
-	    # prepare output file
+            # prepare output file
             if not self.noOut:
                 if self.typeofprocess == "resp" or self.typeofprocess == "tau": outFileName = os.path.join(self.outputDir, os.path.basename(fname).replace(".root","_flat"+outpostfix+".root"))
                 elif self.typeofprocess == "smear": outFileName = os.path.join(self.outputDir, os.path.basename(fname).replace(".root","_smear_1"+outpostfix+".root"))
@@ -150,13 +151,13 @@ class PostProcessor :
 
 	    # process events, if needed
 	    if not fullClone:
-		(nall, npass, timeLoop) = eventLoop(self.modules, inFile, outFile, inTree, outTree, outFileSmear, outTreeSmear, self.typeofprocess)
+		(nall, npass, timeLoop) = eventLoop(self.modules, inFile, outFile, inTree, outTree, outFileSmear, outTreeSmear, self.typeofprocess, maxEvents=self.maxEvents)
 		print 'Processed %d preselected entries from %s (%s entries). Finally selected %d entries' % (nall, fname, inTree.GetEntries(), npass)
 	    else:
                 nall = inTree.GetEntries()
-		print 'Selected %d entries from %s' % (outTree.tree().GetEntries(), fname)
+                print 'Selected %d entries from %s' % (outTree.tree().GetEntries(), fname)
 
-	    # now write the output
+            # now write the output
             if not self.noOut: 
 		if self.typeofprocess == "smear":
 			outFile.Close()
