@@ -88,6 +88,7 @@ class PostProcessor :
 
             #get input tree
             inTree = inFile.Get("Events")
+	    if inTree.GetEntries() == 0: continue 
             totEntriesRead+=inTree.GetEntries()
             # pre-skimming
             elist,jsonFilter = preSkim(inTree, self.json, self.cut)
